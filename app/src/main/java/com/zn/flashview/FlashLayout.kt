@@ -4,24 +4,31 @@ import android.animation.Animator
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.content.Context
+import android.content.res.TypedArray
 import android.util.AttributeSet
 import android.view.Gravity
+import android.view.View
 import android.view.animation.Interpolator
 import android.view.animation.LinearInterpolator
+import android.widget.FrameLayout
 import android.widget.LinearLayout
-import android.widget.TextView
 
+/**
+ * @author zhangnan
+ * @date 2018/8/8
+ */
 /**
  * @author zhangnan
  * @date 2018/8/2
  */
-class FlashView : LinearLayout {
+class FlashLayout : LinearLayout {
 
     companion object {
         const val HORIZONTAL = 0
         const val VERTICAL = 1
     }
 
+    var viewLoader: ViewLoader? = null
     var onItemClickListener: OnItemClickListener? = null
     var intervalTime: Long = 3000
     var durationTime: Long = 3000
@@ -31,11 +38,15 @@ class FlashView : LinearLayout {
             field = value
             initView()
         }
-    val data: MutableList<String> = mutableListOf()
+    var childNumber: Int = 0
+        set(value) {
+            field = value
+            initView()
+        }
 
     private val animationSet by lazy { AnimatorSet() }
-    private val textView1 = TextView(context)
-    private val textView2 = TextView(context)
+    private val container1 = FrameLayout(context)
+    private val container2 = FrameLayout(context)
     private val layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT)
     private var currentPageIndex = 0
     private var nextPageIndex = currentPageIndex + 1
@@ -47,6 +58,9 @@ class FlashView : LinearLayout {
     constructor(context: Context, attributeSet: AttributeSet?) : this(context, attributeSet, 0)
 
     constructor(context: Context, attributeSet: AttributeSet?, defStyleAttr: Int) : super(context, attributeSet, defStyleAttr) {
+        val typedArray: TypedArray = context.obtainStyledAttributes(attributeSet, R.styleable.FlashLayout)
+        childNumber = typedArray.getInt(R.styleable.FlashLayout_childNumber, 0)
+        typedArray.recycle()
         initView()
     }
 
@@ -56,30 +70,30 @@ class FlashView : LinearLayout {
         layoutParams.gravity = Gravity.CENTER
 
         removeAllViews()
-        when (data.size) {
+        when (childNumber) {
             0 -> animationSet.cancel()
             1 -> {
-                textView1.gravity = Gravity.CENTER
-                textView1.text = data[currentPageIndex]
-                textView1.setOnClickListener { onItemClickListener?.onItemClick(currentPageIndex) }
-                addView(textView1)
+                container1.removeAllViews()
+                container1.addView(viewLoader?.loadView(currentPageIndex))
+                container1.setOnClickListener { onItemClickListener?.onItemClick(currentPageIndex) }
+                addView(container1)
             }
             else -> {
-                textView1.gravity = Gravity.CENTER
-                textView2.gravity = Gravity.CENTER
-                textView1.text = data[nextPageIndex]
-                textView2.text = data[currentPageIndex]
-                textView1.setOnClickListener { onItemClickListener?.onItemClick(nextPageIndex) }
-                textView2.setOnClickListener { onItemClickListener?.onItemClick(currentPageIndex) }
-                addView(textView1)
-                addView(textView2)
+                container1.removeAllViews()
+                container2.removeAllViews()
+                container1.addView(viewLoader?.loadView(nextPageIndex))
+                container2.addView(viewLoader?.loadView(currentPageIndex))
+                container1.setOnClickListener { onItemClickListener?.onItemClick(nextPageIndex) }
+                container2.setOnClickListener { onItemClickListener?.onItemClick(currentPageIndex) }
+                addView(container1)
+                addView(container2)
             }
         }
     }
 
     private fun loop(translationY: Float) {
-        val animator1 = ObjectAnimator.ofFloat(textView1, "translationY", translationY)
-        val animator2 = ObjectAnimator.ofFloat(textView2, "translationY", translationY)
+        val animator1 = ObjectAnimator.ofFloat(container1, "translationY", translationY)
+        val animator2 = ObjectAnimator.ofFloat(container2, "translationY", translationY)
         animationSet.interpolator = interpolator
         animationSet.duration = durationTime
         animationSet.addListener(object : Animator.AnimatorListener {
@@ -87,35 +101,37 @@ class FlashView : LinearLayout {
             }
 
             override fun onAnimationEnd(animation: Animator?) {
-                if (currentPageIndex < data.size - 1) {
+                if (currentPageIndex < childNumber - 1) {
                     currentPageIndex++
                 } else {
                     currentPageIndex = 0
                 }
-                if (nextPageIndex < data.size - 1) {
+                if (nextPageIndex < childNumber - 1) {
                     nextPageIndex++
                 } else {
                     nextPageIndex = 0
                 }
                 flag = if (flag) {
                     removeAllViews()
-                    addView(textView2)
-                    addView(textView1)
-                    textView1.y = -translationY * 2
-                    textView2.y = -translationY / 2
-                    textView2.text = data[nextPageIndex]
-                    textView1.setOnClickListener { onItemClickListener?.onItemClick(currentPageIndex) }
-                    textView2.setOnClickListener { onItemClickListener?.onItemClick(nextPageIndex) }
+                    addView(container2)
+                    addView(container1)
+                    container1.y = -translationY * 2
+                    container2.y = -translationY / 2
+                    container2.removeAllViews()
+                    container2.addView(viewLoader?.loadView(nextPageIndex))
+                    container1.setOnClickListener { onItemClickListener?.onItemClick(currentPageIndex) }
+                    container2.setOnClickListener { onItemClickListener?.onItemClick(nextPageIndex) }
                     false
                 } else {
                     removeAllViews()
-                    addView(textView1)
-                    addView(textView2)
-                    textView1.y = -translationY / 2
-                    textView2.y = -translationY * 2
-                    textView1.text = data[nextPageIndex]
-                    textView2.setOnClickListener { onItemClickListener?.onItemClick(currentPageIndex) }
-                    textView1.setOnClickListener { onItemClickListener?.onItemClick(nextPageIndex) }
+                    addView(container1)
+                    addView(container2)
+                    container1.y = -translationY / 2
+                    container2.y = -translationY * 2
+                    container1.removeAllViews()
+                    container1.addView(viewLoader?.loadView(nextPageIndex))
+                    container2.setOnClickListener { onItemClickListener?.onItemClick(currentPageIndex) }
+                    container1.setOnClickListener { onItemClickListener?.onItemClick(nextPageIndex) }
                     true
                 }
                 loop(translationY)
@@ -133,59 +149,25 @@ class FlashView : LinearLayout {
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        if (data.size > 1 && !isInitialized) {
+        if (childNumber > 1 && !isInitialized) {
             val parentWidth = MeasureSpec.getSize(widthMeasureSpec)
             val parentHeight = MeasureSpec.getSize(heightMeasureSpec)
             layoutParams.width = parentWidth
             layoutParams.height = parentHeight
-            textView1.layoutParams = layoutParams
-            textView2.layoutParams = layoutParams
-            textView1.y = -parentHeight.toFloat() / 2
-            textView2.y = -parentHeight.toFloat() / 2
+            container1.layoutParams = layoutParams
+            container2.layoutParams = layoutParams
+            container1.y = -parentHeight.toFloat() / 2
+            container2.y = -parentHeight.toFloat() / 2
             loop(parentHeight.toFloat() / 2)
             isInitialized = true
         }
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
     }
 
-    fun initData(data: List<String>) {
-        updateData(data)
-    }
+    interface ViewLoader {
 
-    fun updateData(data: List<String>) {
-        this.data.clear()
-        this.data.addAll(data)
-        initView()
-    }
+        fun loadView(position: Int): View
 
-    fun addData(data: List<String>) {
-        this.data.addAll(data)
-        initView()
-    }
-
-    fun clearData() {
-        this.data.clear()
-        initView()
-    }
-
-    fun setTextSize(size: Float) {
-        textView1.textSize = size
-        textView2.textSize = size
-    }
-
-    fun setTextColor(color: Int) {
-        textView1.setTextColor(color)
-        textView2.setTextColor(color)
-    }
-
-    fun setTextPadding(left: Int, top: Int, right: Int, bottom: Int) {
-        textView1.setPadding(left, top, right, bottom)
-        textView2.setPadding(left, top, right, bottom)
-    }
-
-    fun setTextGraviry(gravity: Int) {
-        textView1.gravity = gravity
-        textView2.gravity = gravity
     }
 
     interface OnItemClickListener {

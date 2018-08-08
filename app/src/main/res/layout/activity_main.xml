@@ -13,4 +13,11 @@
         android:layout_gravity="center"
         android:background="@android:color/holo_blue_light"/>
 
+    <com.zn.flashview.FlashLayout
+        android:id="@+id/fl_test"
+        android:layout_width="100dp"
+        android:layout_height="50dp"
+        android:layout_gravity="center_horizontal"
+        android:background="@android:color/holo_blue_dark"/>
+
 </FrameLayout>
