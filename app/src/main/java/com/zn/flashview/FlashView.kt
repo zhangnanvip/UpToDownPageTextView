@@ -17,10 +17,19 @@ import android.widget.TextView
  */
 class FlashView : LinearLayout {
 
+    companion object {
+        const val HORIZONTAL = 0
+        const val VERTICAL = 1
+    }
+
     var onItemClickListener: OnItemClickListener? = null
     var intervalTime: Long = 3000
     var durationTime: Long = 3000
     var interpolator: Interpolator = LinearInterpolator()
+    var direction: Int = VERTICAL
+        set(value) {
+            initView()
+        }
     val data: MutableList<String> = mutableListOf()
 
     private val animationSet by lazy { AnimatorSet() }
@@ -41,7 +50,7 @@ class FlashView : LinearLayout {
     }
 
     private fun initView() {
-        orientation = LinearLayout.VERTICAL
+        orientation = direction
         gravity = Gravity.CENTER
         layoutParams.gravity = Gravity.CENTER
 
