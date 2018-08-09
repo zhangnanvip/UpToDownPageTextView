@@ -17,23 +17,13 @@ import android.widget.TextView
  */
 class FlashView : LinearLayout {
 
-    companion object {
-        const val HORIZONTAL = 0
-        const val VERTICAL = 1
-    }
-
     var onItemClickListener: OnItemClickListener? = null
     var intervalTime: Long = 3000
     var durationTime: Long = 3000
     var interpolator: Interpolator = LinearInterpolator()
-    var direction: Int = VERTICAL
-        set(value) {
-            field = value
-            initView()
-        }
     val data: MutableList<String> = mutableListOf()
 
-    private val animationSet by lazy { AnimatorSet() }
+    private var animationSet: AnimatorSet? = null
     private val textView1 = TextView(context)
     private val textView2 = TextView(context)
     private val layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT)
@@ -51,13 +41,13 @@ class FlashView : LinearLayout {
     }
 
     private fun initView() {
-        orientation = direction
+        orientation = VERTICAL
         gravity = Gravity.CENTER
         layoutParams.gravity = Gravity.CENTER
 
         removeAllViews()
         when (data.size) {
-            0 -> animationSet.cancel()
+            0 -> animationSet?.cancel()
             1 -> {
                 textView1.gravity = Gravity.CENTER
                 textView1.text = data[currentPageIndex]
@@ -80,56 +70,15 @@ class FlashView : LinearLayout {
     private fun loop(translationY: Float) {
         val animator1 = ObjectAnimator.ofFloat(textView1, "translationY", translationY)
         val animator2 = ObjectAnimator.ofFloat(textView2, "translationY", translationY)
-        animationSet.interpolator = interpolator
-        animationSet.duration = durationTime
-        animationSet.addListener(object : Animator.AnimatorListener {
-            override fun onAnimationRepeat(animation: Animator?) {
-            }
-
-            override fun onAnimationEnd(animation: Animator?) {
-                if (currentPageIndex < data.size - 1) {
-                    currentPageIndex++
-                } else {
-                    currentPageIndex = 0
-                }
-                if (nextPageIndex < data.size - 1) {
-                    nextPageIndex++
-                } else {
-                    nextPageIndex = 0
-                }
-                flag = if (flag) {
-                    removeAllViews()
-                    addView(textView2)
-                    addView(textView1)
-                    textView1.y = -translationY * 2
-                    textView2.y = -translationY / 2
-                    textView2.text = data[nextPageIndex]
-                    textView1.setOnClickListener { onItemClickListener?.onItemClick(currentPageIndex) }
-                    textView2.setOnClickListener { onItemClickListener?.onItemClick(nextPageIndex) }
-                    false
-                } else {
-                    removeAllViews()
-                    addView(textView1)
-                    addView(textView2)
-                    textView1.y = -translationY / 2
-                    textView2.y = -translationY * 2
-                    textView1.text = data[nextPageIndex]
-                    textView2.setOnClickListener { onItemClickListener?.onItemClick(currentPageIndex) }
-                    textView1.setOnClickListener { onItemClickListener?.onItemClick(nextPageIndex) }
-                    true
-                }
-                loop(translationY)
-            }
-
-            override fun onAnimationCancel(animation: Animator?) {
-            }
-
-            override fun onAnimationStart(animation: Animator?) {
-            }
-        })
-        animationSet.playTogether(animator1, animator2)
-        animationSet.startDelay = intervalTime
-        animationSet.start()
+        if (animationSet == null) {
+            animationSet = AnimatorSet()
+            animationSet?.addListener(LoopAnimator(translationY))
+        }
+        animationSet?.interpolator = interpolator
+        animationSet?.duration = durationTime
+        animationSet?.playTogether(animator1, animator2)
+        animationSet?.startDelay = intervalTime
+        animationSet?.start()
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
@@ -192,5 +141,51 @@ class FlashView : LinearLayout {
 
         fun onItemClick(position: Int)
 
+    }
+
+    inner class LoopAnimator(private val translationY: Float) : Animator.AnimatorListener {
+        override fun onAnimationRepeat(animation: Animator?) {
+        }
+
+        override fun onAnimationEnd(animation: Animator?) {
+            if (currentPageIndex < data.size - 1) {
+                currentPageIndex++
+            } else {
+                currentPageIndex = 0
+            }
+            if (nextPageIndex < data.size - 1) {
+                nextPageIndex++
+            } else {
+                nextPageIndex = 0
+            }
+            flag = if (flag) {
+                removeAllViews()
+                addView(textView2)
+                addView(textView1)
+                textView1.y = -translationY * 2
+                textView2.y = -translationY / 2
+                textView2.text = data[nextPageIndex]
+                textView1.setOnClickListener { onItemClickListener?.onItemClick(currentPageIndex) }
+                textView2.setOnClickListener { onItemClickListener?.onItemClick(nextPageIndex) }
+                false
+            } else {
+                removeAllViews()
+                addView(textView1)
+                addView(textView2)
+                textView1.y = -translationY / 2
+                textView2.y = -translationY * 2
+                textView1.text = data[nextPageIndex]
+                textView2.setOnClickListener { onItemClickListener?.onItemClick(currentPageIndex) }
+                textView1.setOnClickListener { onItemClickListener?.onItemClick(nextPageIndex) }
+                true
+            }
+            loop(translationY)
+        }
+
+        override fun onAnimationCancel(animation: Animator?) {
+        }
+
+        override fun onAnimationStart(animation: Animator?) {
+        }
     }
 }
