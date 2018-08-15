@@ -49,14 +49,11 @@ class FlashView : LinearLayout {
         when (data.size) {
             0 -> animationSet?.cancel()
             1 -> {
-                textView1.gravity = Gravity.CENTER
                 textView1.text = data[currentPageIndex]
                 textView1.setOnClickListener { onItemClickListener?.onItemClick(currentPageIndex) }
                 addView(textView1)
             }
             else -> {
-                textView1.gravity = Gravity.CENTER
-                textView2.gravity = Gravity.CENTER
                 textView1.text = data[nextPageIndex]
                 textView2.text = data[currentPageIndex]
                 textView1.setOnClickListener { onItemClickListener?.onItemClick(nextPageIndex) }
@@ -117,24 +114,28 @@ class FlashView : LinearLayout {
         initView()
     }
 
-    fun setTextSize(size: Float) {
+    fun setTextSize(size: Float): FlashView {
         textView1.textSize = size
         textView2.textSize = size
+        return this
     }
 
-    fun setTextColor(color: Int) {
+    fun setTextColor(color: Int): FlashView {
         textView1.setTextColor(color)
         textView2.setTextColor(color)
+        return this
     }
 
-    fun setTextPadding(left: Int, top: Int, right: Int, bottom: Int) {
+    fun setTextPadding(left: Int, top: Int, right: Int, bottom: Int): FlashView {
         textView1.setPadding(left, top, right, bottom)
         textView2.setPadding(left, top, right, bottom)
+        return this
     }
 
-    fun setTextGraviry(gravity: Int) {
+    fun setTextGravity(gravity: Int): FlashView {
         textView1.gravity = gravity
         textView2.gravity = gravity
+        return this
     }
 
     interface OnItemClickListener {
