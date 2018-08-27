@@ -4,6 +4,7 @@ import android.animation.Animator
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.content.Context
+import android.text.TextUtils
 import android.util.AttributeSet
 import android.view.Gravity
 import android.view.animation.Interpolator
@@ -24,9 +25,9 @@ class FlashView : LinearLayout {
     val data: MutableList<String> = mutableListOf()
 
     private var animationSet: AnimatorSet? = null
-    private val textView1 = TextView(context)
-    private val textView2 = TextView(context)
-    private val layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT)
+    private lateinit var textView1: TextView
+    private lateinit var textView2: TextView
+    private var textLayoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT)
     private var currentPageIndex = 0
     private var nextPageIndex = currentPageIndex + 1
     private var flag: Boolean = true
@@ -43,14 +44,23 @@ class FlashView : LinearLayout {
     private fun initView() {
         orientation = VERTICAL
         gravity = Gravity.CENTER
-        layoutParams.gravity = Gravity.CENTER
+        animationSet?.cancel()
+        textView1 = TextView(context)
+        textView2 = TextView(context)
+        currentPageIndex = 0
+        nextPageIndex = currentPageIndex + 1
+        flag = true
+        isInitialized = false
+        textLayoutParams.gravity = Gravity.CENTER
 
         removeAllViews()
         when (data.size) {
-            0 -> animationSet?.cancel()
+            0 -> {
+            }
             1 -> {
                 textView1.text = data[currentPageIndex]
                 textView1.setOnClickListener { onItemClickListener?.onItemClick(currentPageIndex) }
+                textView1.ellipsize = TextUtils.TruncateAt.END
                 addView(textView1)
             }
             else -> {
@@ -58,6 +68,8 @@ class FlashView : LinearLayout {
                 textView2.text = data[currentPageIndex]
                 textView1.setOnClickListener { onItemClickListener?.onItemClick(nextPageIndex) }
                 textView2.setOnClickListener { onItemClickListener?.onItemClick(currentPageIndex) }
+                textView1.ellipsize = TextUtils.TruncateAt.END
+                textView2.ellipsize = TextUtils.TruncateAt.END
                 addView(textView1)
                 addView(textView2)
             }
@@ -82,10 +94,10 @@ class FlashView : LinearLayout {
         if (data.size > 1 && !isInitialized) {
             val parentWidth = MeasureSpec.getSize(widthMeasureSpec)
             val parentHeight = MeasureSpec.getSize(heightMeasureSpec)
-            layoutParams.width = parentWidth
-            layoutParams.height = parentHeight
-            textView1.layoutParams = layoutParams
-            textView2.layoutParams = layoutParams
+            textLayoutParams.width = parentWidth
+            textLayoutParams.height = parentHeight
+            textView1.layoutParams = textLayoutParams
+            textView2.layoutParams = textLayoutParams
             textView1.y = -parentHeight.toFloat() / 2
             textView2.y = -parentHeight.toFloat() / 2
             loop(parentHeight.toFloat() / 2)
@@ -120,9 +132,23 @@ class FlashView : LinearLayout {
         return this
     }
 
+    fun setTextSize(unit: Int, size: Float): FlashView {
+        textView1.setTextSize(unit, size)
+        textView2.setTextSize(unit, size)
+        return this
+    }
+
     fun setTextColor(color: Int): FlashView {
         textView1.setTextColor(color)
         textView2.setTextColor(color)
+        return this
+    }
+
+    fun setSingleLine(): FlashView {
+        textView1.setSingleLine()
+        textView2.setSingleLine()
+        textView1.maxLines = 1
+        textView2.maxLines = 1
         return this
     }
 

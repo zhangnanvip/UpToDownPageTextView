@@ -25,6 +25,8 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        btn_update.setOnClickListener { fv_test.updateData(data) }
+
         fl_test.adapter = object : FlashAdapter() {
             override fun loadView(position: Int, parent: ViewGroup): View {
                 val tv = TextView(this@MainActivity)
